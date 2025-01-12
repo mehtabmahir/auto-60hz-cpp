@@ -48,7 +48,7 @@ const std::vector<std::string> systemProcesses = {
     "snippingtool.exe"
 };
 
-BOOL CheckFullscreenState() {
+bool CheckFullscreenState() {
     static HWND trackedHwnd = nullptr;
     static bool isFullscreen = false;
 
@@ -73,7 +73,7 @@ BOOL CheckFullscreenState() {
                 isFullscreen = false;
             }
         } else {
-            std::cout << "Ignoring system process: " << appName << std::endl;
+            std::cout << "Ignoring system process: " << appName << '\r';
         }
     } else {
         if (trackedHwnd && !IsWindowFullscreen(trackedHwnd)) {
@@ -85,8 +85,6 @@ BOOL CheckFullscreenState() {
     }
 
     return isFullscreen;
-
-    
 }
 
 int main() {
@@ -94,7 +92,7 @@ int main() {
     devMode.dmSize = sizeof(DEVMODE);
     devMode.dmDriverExtra = 0;
     int currentRefreshRate;
-
+    SYSTEM_POWER_STATUS batteryStatus;
 
     if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode) == 0) {
         std::cerr << "Error getting display settings." << std::endl;
@@ -104,29 +102,43 @@ int main() {
 
     std::cout << "Checking fullscreen application state...\n";
     while (true) {
-        
-        if (CheckFullscreenState()) {
-            devMode.dmDisplayFrequency = 60;
-            if (currentRefreshRate != 60){
-                if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                    std::cout << "Refresh rate set to 60hz" << std::endl;
-                    currentRefreshRate = 60;
+        GetSystemPowerStatus(&batteryStatus);
+        if (batteryStatus.ACLineStatus == 0) {
+            if (CheckFullscreenState()) {
+                devMode.dmDisplayFrequency = 60;
+                if (currentRefreshRate != 60){
+                    if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
+                        std::cout << "Refresh rate set to 60hz" << std::endl;
+                        currentRefreshRate = 60;
+                    }
+                    else
+                        std::cerr << "Error changing refresh rate." << std::endl;
                 }
-                else
-                    std::cerr << "Error changing refresh rate." << std::endl;
+            }
+            else {
+                devMode.dmDisplayFrequency = 120;
+                if (currentRefreshRate != 120) {
+                    if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
+                        std::cout << "Refresh rate set to 120hz" << std::endl;
+                        currentRefreshRate = 120;
+                    }
+                    else
+                        std::cerr << "Error changing refresh rate." << std::endl;
+                }
             }
         }
-        else {
+        else if (currentRefreshRate == 60) {
             devMode.dmDisplayFrequency = 120;
-            if (currentRefreshRate != 120) {
                 if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                    std::cout << "Refresh rate set to 120hz" << std::endl;
+                    std::cout << "Plugged in. Refresh rate set to 120hz" << std::endl;
                     currentRefreshRate = 120;
                 }
                 else
                     std::cerr << "Error changing refresh rate." << std::endl;
-            }
+                
         }
+        else
+            std::cout << "Plugged in." << '\r';
         Sleep(1000); // Check every second
     }
     return 0;
