@@ -7,6 +7,7 @@ This application dynamically adjusts the screen's refresh rate based on whether 
 - **Refresh Rate Control**: Switches the refresh rate between 60Hz and 120Hz depending on the window's state.
 - **System Process Filtering**: Ignores system applications such as `explorer.exe`, `widgets.exe`, and `snippingtool.exe` to focus only on user applications.
 - **Low Resource Usage**: The program is optimized to minimize CPU usage (<0.1%), ensuring your system's performance remains unaffected while it runs.
+- **Checks for AC**: Skips the script if the device is plugged into power.
 
 ## Efficiency
 The program is designed to run in the background with minimal CPU usage (<0.1%). By reducing unnecessary screen refresh rates when not in fullscreen mode, it can help improve battery life by up to **20%** on portable devices.
@@ -35,7 +36,7 @@ Alternatively, you can download the precompiled `.exe` file from the and run it 
 - Any C++ compiler supporting Windows API.
 
 ## How to Use
-1. Open the source code in VS Code and compile it with your configured C++ compiler, or download the `.exe` file from the [release page](#).
+1. Go to the directory containing the cpp file in cmd or PowerShell and compile it with your configured C++ compiler, or download the `.exe` file from the [release page](#).
 2. Run the compiled executable.
 3. The program will continuously check the fullscreen state of active applications and adjust the refresh rate as necessary.
 
@@ -44,6 +45,7 @@ I am actively working on improving this tool and plan to introduce more features
 - Configurable refresh rates.
 - User interface
 - Run on startup (You can do it manually by putting it in the Startup folder)
+- Run hidden on tray
 Stay tuned for new releases!
 - Run hidden on tray
 
@@ -80,5 +82,3 @@ SOFTWARE.
 
 ## Contributing
 Feel free to fork and contribute to this project! Pull requests for improvements, optimizations, or bug fixes are welcome.
-
----
