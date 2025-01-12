@@ -45,6 +45,7 @@ I am actively working on improving this tool and plan to introduce more features
 - User interface
 - Run on startup (You can do it manually by putting it in the Startup folder)
 Stay tuned for new releases!
+- Run hidden on tray
 
 ## Limitations
 - This program only works on Windows operating systems.
@@ -81,5 +82,3 @@ SOFTWARE.
 Feel free to fork and contribute to this project! Pull requests for improvements, optimizations, or bug fixes are welcome.
 
 ---
-
-This version includes the specific scenario of watching videos, like on YouTube, as a key use case. Let me know if there’s anything else to adjust!
