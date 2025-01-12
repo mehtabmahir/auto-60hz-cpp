@@ -3,6 +3,9 @@
 #include <psapi.h>
 #include <vector>
 #include <algorithm>
+#include <Windows.h>
+
+
 
 // Function to determine if a window is in fullscreen mode
 bool IsWindowFullscreen(HWND hwnd) {
@@ -45,7 +48,7 @@ const std::vector<std::string> systemProcesses = {
     "snippingtool.exe"
 };
 
-void CheckFullscreenState() {
+BOOL CheckFullscreenState() {
     static HWND trackedHwnd = nullptr;
     static bool isFullscreen = false;
 
@@ -80,12 +83,50 @@ void CheckFullscreenState() {
             isFullscreen = false;
         }
     }
+
+    return isFullscreen;
+
+    
 }
 
 int main() {
+    DEVMODE devMode;
+    devMode.dmSize = sizeof(DEVMODE);
+    devMode.dmDriverExtra = 0;
+    int currentRefreshRate;
+
+
+    if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode) == 0) {
+        std::cerr << "Error getting display settings." << std::endl;
+        return 1;
+    }
+
+
     std::cout << "Checking fullscreen application state...\n";
     while (true) {
-        CheckFullscreenState();
+        
+        if (CheckFullscreenState()) {
+            devMode.dmDisplayFrequency = 60;
+            if (currentRefreshRate != 60){
+                if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
+                    std::cout << "Refresh rate set to 60hz" << std::endl;
+                    currentRefreshRate = 60;
+                }
+                else
+                    std::cerr << "Error changing refresh rate." << std::endl;
+            }
+        }
+        else {
+            devMode.dmDisplayFrequency = 120;
+            if (currentRefreshRate != 120) {
+                if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
+                    std::cout << "Refresh rate set to 120hz" << std::endl;
+                    currentRefreshRate = 120;
+                }
+                else
+                    std::cerr << "Error changing refresh rate." << std::endl;
+            }
+        }
         Sleep(1000); // Check every second
     }
     return 0;
