@@ -4,8 +4,11 @@
 #include <vector>
 #include <algorithm>
 #include <Windows.h>
+#include <thread>
+#include <atomic>
 
-
+std::atomic<bool> shouldStop(false);  // Atomic flag to control thread stop
+std::thread logicThread;  // Global thread object
 
 // Function to determine if a window is in fullscreen mode
 bool IsWindowFullscreen(HWND hwnd) {
@@ -87,12 +90,20 @@ bool CheckFullscreenState() {
     return isFullscreen;
 }
 
-int main() {
+int upperHz, lowerHz;
+
+void SetHighLowValues(int high, int low) {
+    upperHz = high;
+    lowerHz = low;
+}
+
+int mainScript() {
     DEVMODE devMode;
     devMode.dmSize = sizeof(DEVMODE);
     devMode.dmDriverExtra = 0;
     int currentRefreshRate;
     SYSTEM_POWER_STATUS batteryStatus;
+
 
     if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode) == 0) {
         std::cerr << "Error getting display settings." << std::endl;
@@ -101,37 +112,37 @@ int main() {
 
 
     std::cout << "Checking fullscreen application state...\n";
-    while (true) {
+    while (!shouldStop) {
         GetSystemPowerStatus(&batteryStatus);
         if (batteryStatus.ACLineStatus == 0) {
             if (CheckFullscreenState()) {
-                devMode.dmDisplayFrequency = 60;
-                if (currentRefreshRate != 60){
+                devMode.dmDisplayFrequency = lowerHz;
+                if (currentRefreshRate != lowerHz){
                     if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                        std::cout << "Refresh rate set to 60hz" << std::endl;
-                        currentRefreshRate = 60;
+                        std::cout << "Refresh rate set to " << lowerHz << "hz" << std::endl;
+                        currentRefreshRate = lowerHz;
                     }
                     else
                         std::cerr << "Error changing refresh rate." << std::endl;
                 }
             }
             else {
-                devMode.dmDisplayFrequency = 120;
-                if (currentRefreshRate != 120) {
+                devMode.dmDisplayFrequency = upperHz;
+                if (currentRefreshRate != upperHz) {
                     if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                        std::cout << "Refresh rate set to 120hz" << std::endl;
-                        currentRefreshRate = 120;
+                        std::cout << "Refresh rate set to " << upperHz << "hz" << std::endl;
+                        currentRefreshRate = upperHz;
                     }
                     else
                         std::cerr << "Error changing refresh rate." << std::endl;
                 }
             }
         }
-        else if (currentRefreshRate == 60) {
-            devMode.dmDisplayFrequency = 120;
+        else if (currentRefreshRate == lowerHz) {
+            devMode.dmDisplayFrequency = upperHz;
                 if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                    std::cout << "Plugged in. Refresh rate set to 120hz" << std::endl;
-                    currentRefreshRate = 120;
+                    std::cout << "Refresh rate set to " << upperHz << "hz" << std::endl;
+                    currentRefreshRate = upperHz;
                 }
                 else
                     std::cerr << "Error changing refresh rate." << std::endl;
