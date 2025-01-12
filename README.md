@@ -23,12 +23,12 @@ The program is designed to run in the background with minimal CPU usage (<0.1%).
 - **Windows API**: The program uses the `Windows.h` header for interacting with system-level functions such as window handling and display settings.
 - **PSAPI**: The `psapi.h` library is used to retrieve process information like the process name associated with a window.
 - **DEVMODE**: The `DEVMODE` structure is used to retrieve and change display settings, including refresh rate.
-- **Algorithm and Vector Libraries**: The standard C++ libraries `<algorithm>` and `<vector>` are used for filtering and processing application names.
+- **Algorithm and Vector Libraries**: `<algorithm>` and vectors are used for filtering and processing application names.
 
 ## Installation
-To run this program, you need a Windows environment with access to the `Windows API`. Simply compile and execute the program using VS Code with any C++ compiler.
+To run this program, you need a Windows environment with access to the `Windows API`. Simply compile and execute the program  with any C++ compiler.
 
-Alternatively, you can download the precompiled `.exe` file from the [release page](#) and run it directly.
+Alternatively, you can download the precompiled `.exe` file from the and run it directly.
 
 ### Prerequisites
 - Windows OS
