@@ -8,6 +8,7 @@
 
 // Declare the global text box handles
 HWND hInputHigh, hInputLow, hStartupCheckbox;
+NOTIFYICONDATA nid = {};  // Tray icon data structure
 
 // Forward declarations of functions
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -17,77 +18,106 @@ bool LoadValuesFromFile(int &high, int &low);
 void LoadAndPopulateValues(HWND hWnd);
 void SetStartup(bool enable);
 bool IsStartupEnabled();
+void AddTrayIcon(HWND hWnd, NOTIFYICONDATA &nid);
+void RemoveTrayIcon(NOTIFYICONDATA &nid);
 
 // Entry point
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     const wchar_t CLASS_NAME[] = L"Sample Window Class";
-    
+
     // Register the window class
     WNDCLASS wc = {};
     wc.lpfnWndProc = WndProc;
     wc.hInstance = hInstance;
     wc.lpszClassName = CLASS_NAME;
+    wc.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(101));  // Set window icon
+
     RegisterClass(&wc);
-    
+
     // Create the window
     HWND hWnd = CreateWindowEx(0, CLASS_NAME, L"High and Low Input", WS_OVERLAPPEDWINDOW,
         CW_USEDEFAULT, CW_USEDEFAULT, 300, 250, nullptr, nullptr, hInstance, nullptr);
-    
+
     if (hWnd == nullptr) {
         return 0;
     }
 
-    // Try to load saved values
-    LoadAndPopulateValues(hWnd);
+    // Add the tray icon
+    AddTrayIcon(hWnd, nid);
 
     // Show the window
     ShowWindow(hWnd, nCmdShow);
-    
+
     // Main message loop
     MSG msg = {};
     while (GetMessage(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    return (int) msg.wParam;
+
+    // Clean up the tray icon before exiting
+    RemoveTrayIcon(nid);
+    return (int)msg.wParam;
 }
 
-// Window procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    static NOTIFYICONDATA nid = {};
+    
     switch (uMsg) {
     case WM_CREATE:
+        // Initialize tray icon
+        AddTrayIcon(hWnd, nid);
+
         // Create input fields for high and low values
         CreateWindow(L"STATIC", L"Enter High Value:", WS_VISIBLE | WS_CHILD, 10, 20, 150, 20, hWnd, nullptr, nullptr, nullptr);
         hInputHigh = CreateWindow(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 160, 20, 100, 20, hWnd, nullptr, nullptr, nullptr);
-        
+
         CreateWindow(L"STATIC", L"Enter Low Value:", WS_VISIBLE | WS_CHILD, 10, 60, 150, 20, hWnd, nullptr, nullptr, nullptr);
         hInputLow = CreateWindow(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 160, 60, 100, 20, hWnd, nullptr, nullptr, nullptr);
-        
+
         // Add a button to process the input
         CreateWindow(L"BUTTON", L"Submit", WS_VISIBLE | WS_CHILD, 100, 100, 100, 30, hWnd, (HMENU)1, nullptr, nullptr);
-        
+
         // Add a checkbox for "Run on Startup"
         hStartupCheckbox = CreateWindow(L"BUTTON", L"Run on Startup", WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 140, 200, 20, hWnd, (HMENU)2, nullptr, nullptr);
-        
-        // Check the checkbox if startup is enabled
         if (IsStartupEnabled()) {
             SendMessage(hStartupCheckbox, BM_SETCHECK, BST_CHECKED, 0);
         }
+
+        LoadAndPopulateValues(hWnd);
         break;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == 1) {
-            // When the button is clicked, process the input
             ProcessInputValues(hWnd);
         } else if (LOWORD(wParam) == 2) {
-            // Handle the "Run on Startup" checkbox
             LRESULT isChecked = SendMessage(hStartupCheckbox, BM_GETCHECK, 0, 0);
             SetStartup(isChecked == BST_CHECKED);
         }
         break;
 
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xFFF0) == SC_MINIMIZE) {
+            ShowWindow(hWnd, SW_HIDE);
+            return 0;
+        } else if ((wParam & 0xFFF0) == SC_CLOSE) {
+            DestroyWindow(hWnd);
+            return 0;
+        }
+        break;
+
+    case WM_USER + 1:  // Tray icon message ID
+        if (lParam == WM_LBUTTONDOWN || lParam == WM_RBUTTONDOWN) {
+            // Restore the window when clicking on tray icon
+            ShowWindow(hWnd, SW_SHOW);
+            SetForegroundWindow(hWnd);
+        }
+        break;
+
     case WM_DESTROY:
-        PostQuitMessage(0);
+        // Clean up tray icon and close application
+        RemoveTrayIcon(nid);
+        PostQuitMessage(0); // Properly quit the application
         break;
 
     default:
@@ -95,6 +125,26 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     }
     return 0;
 }
+
+
+// Function to add the tray icon
+void AddTrayIcon(HWND hWnd, NOTIFYICONDATA &nid) {
+    nid.cbSize = sizeof(NOTIFYICONDATA);
+    nid.hWnd = hWnd;
+    nid.uID = 1;  // Unique identifier for the tray icon
+    nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
+    nid.uCallbackMessage = WM_USER + 1;  // Custom message for tray interactions
+    nid.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(101));  // Icon resource ID
+    wcscpy_s(nid.szTip, L"My Application");
+
+    Shell_NotifyIcon(NIM_ADD, &nid);
+}
+
+// Function to remove the tray icon
+void RemoveTrayIcon(NOTIFYICONDATA &nid) {
+    Shell_NotifyIcon(NIM_DELETE, &nid);
+}
+
 
 // Function to process input values
 void ProcessInputValues(HWND hWnd) {
