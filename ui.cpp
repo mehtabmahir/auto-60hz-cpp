@@ -2,10 +2,12 @@
 #include <string>
 #include <fstream>
 #include <iostream>
+#include <shlwapi.h>  // For registry functions
+#include <filesystem>
 #include "main.cpp"
 
 // Declare the global text box handles
-HWND hInputHigh, hInputLow;
+HWND hInputHigh, hInputLow, hStartupCheckbox;
 
 // Forward declarations of functions
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -13,6 +15,8 @@ void ProcessInputValues(HWND hWnd);
 void SaveValuesToFile(int high, int low);
 bool LoadValuesFromFile(int &high, int &low);
 void LoadAndPopulateValues(HWND hWnd);
+void SetStartup(bool enable);
+bool IsStartupEnabled();
 
 // Entry point
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -27,7 +31,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     
     // Create the window
     HWND hWnd = CreateWindowEx(0, CLASS_NAME, L"High and Low Input", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 300, 200, nullptr, nullptr, hInstance, nullptr);
+        CW_USEDEFAULT, CW_USEDEFAULT, 300, 250, nullptr, nullptr, hInstance, nullptr);
     
     if (hWnd == nullptr) {
         return 0;
@@ -61,12 +65,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         
         // Add a button to process the input
         CreateWindow(L"BUTTON", L"Submit", WS_VISIBLE | WS_CHILD, 100, 100, 100, 30, hWnd, (HMENU)1, nullptr, nullptr);
+        
+        // Add a checkbox for "Run on Startup"
+        hStartupCheckbox = CreateWindow(L"BUTTON", L"Run on Startup", WS_VISIBLE | WS_CHILD | BS_AUTOCHECKBOX, 10, 140, 200, 20, hWnd, (HMENU)2, nullptr, nullptr);
+        
+        // Check the checkbox if startup is enabled
+        if (IsStartupEnabled()) {
+            SendMessage(hStartupCheckbox, BM_SETCHECK, BST_CHECKED, 0);
+        }
         break;
 
     case WM_COMMAND:
         if (LOWORD(wParam) == 1) {
             // When the button is clicked, process the input
             ProcessInputValues(hWnd);
+        } else if (LOWORD(wParam) == 2) {
+            // Handle the "Run on Startup" checkbox
+            LRESULT isChecked = SendMessage(hStartupCheckbox, BM_GETCHECK, 0, 0);
+            SetStartup(isChecked == BST_CHECKED);
         }
         break;
 
@@ -80,6 +96,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
+// Function to process input values
 void ProcessInputValues(HWND hWnd) {
     // Retrieve the text from the textboxes
     int highLength = GetWindowTextLength(hInputHigh) + 1;
@@ -123,8 +140,22 @@ void ProcessInputValues(HWND hWnd) {
 
 // Function to save the high and low values to a file
 void SaveValuesToFile(int high, int low) {
+    // Get the current directory (where the executable is located)
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileName(nullptr, exePath, MAX_PATH);
+    
+    // Extract the directory part of the executable path
+    PathRemoveFileSpec(exePath);  // Removes the file part, leaving only the directory path
+
+    // Create the full path for settings.txt
+    std::wstring settingsFilePath = std::wstring(exePath) + L"\\settings.txt";
+
+    // Convert the wide string to a narrow string
+    char narrowPath[MAX_PATH];
+    wcstombs(narrowPath, settingsFilePath.c_str(), MAX_PATH);
+
     // Open the file in write mode, and if it exists, overwrite it.
-    std::ofstream outFile("settings.txt", std::ios::out | std::ios::trunc);
+    std::ofstream outFile(narrowPath, std::ios::out | std::ios::trunc);
 
     // Check if the file was successfully opened
     if (outFile.is_open()) {
@@ -134,36 +165,39 @@ void SaveValuesToFile(int high, int low) {
 
         // Close the file
         outFile.close();
-
-        // Confirm that the values were saved
-        MessageBox(nullptr, L"Values saved to settings.txt", L"File Saved", MB_OK | MB_ICONINFORMATION);
     } else {
         MessageBox(nullptr, L"Error opening file for saving values. Ensure the program has write permissions.", L"File Error", MB_OK | MB_ICONERROR);
-
-        // Debugging output: get the current directory using _wgetcwd (wide-char)
-        wchar_t currentDir[MAX_PATH];
-        _wgetcwd(currentDir, MAX_PATH);  // Use wide-character version
-
-        // Output current directory (wchar_t to char* conversion for displaying in console)
-        char dirBuffer[MAX_PATH];
-        wcstombs(dirBuffer, currentDir, MAX_PATH);  // Convert wchar_t to char* for console output
-        std::cout << "Current directory: " << dirBuffer << std::endl;  // Print current working directory
     }
 }
 
 // Function to read the high and low values from the file
 bool LoadValuesFromFile(int &high, int &low) {
-    std::ifstream inFile("settings.txt");
+    // Get the current directory (where the executable is located)
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileName(nullptr, exePath, MAX_PATH);
+    
+    // Extract the directory part of the executable path
+    PathRemoveFileSpec(exePath);  // Removes the file part, leaving only the directory path
+
+    // Create the full path for settings.txt
+    std::wstring settingsFilePath = std::wstring(exePath) + L"\\settings.txt";
+
+    // Convert the wide string to a narrow string
+    char narrowPath[MAX_PATH];
+    wcstombs(narrowPath, settingsFilePath.c_str(), MAX_PATH);
+
+    std::ifstream inFile(narrowPath);
     if (inFile.is_open()) {
         inFile >> high;
         inFile >> low;
         inFile.close();
         return true;  // Successfully loaded values
     } else {
-        MessageBox(nullptr, L"Error opening file for loading values.", L"File Error", MB_OK | MB_ICONERROR);
+        MessageBox(nullptr, L"Error opening file for loading values. Make sure settings.txt exists", L"File Error", MB_OK | MB_ICONERROR);
         return false;  // File not found or read error
     }
 }
+
 
 // Function to load and populate the textboxes with saved values
 void LoadAndPopulateValues(HWND hWnd) {
@@ -174,4 +208,41 @@ void LoadAndPopulateValues(HWND hWnd) {
         SetWindowTextA(hInputLow, std::to_string(low).c_str());
         ProcessInputValues(hWnd);
     }
+}
+
+// Function to set the application to run on startup
+void SetStartup(bool enable) {
+    HKEY hKey;
+    const wchar_t *subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+    const wchar_t *valueName = L"MyApp";
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileName(nullptr, exePath, MAX_PATH);
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_SET_VALUE, &hKey) == ERROR_SUCCESS) {
+        if (enable) {
+            RegSetValueEx(hKey, valueName, 0, REG_SZ, (const BYTE*)exePath, (DWORD)((wcslen(exePath) + 1) * sizeof(wchar_t)));
+        } else {
+            RegDeleteValue(hKey, valueName);
+        }
+        RegCloseKey(hKey);
+    }
+}
+
+// Function to check if the application is set to run on startup
+bool IsStartupEnabled() {
+    HKEY hKey;
+    const wchar_t *subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+    const wchar_t *valueName = L"MyApp";
+    wchar_t exePath[MAX_PATH];
+    GetModuleFileName(nullptr, exePath, MAX_PATH);
+
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, subKey, 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS) {
+        wchar_t value[MAX_PATH];
+        DWORD size = sizeof(value);
+        bool isEnabled = RegQueryValueEx(hKey, valueName, nullptr, nullptr, (LPBYTE)value, &size) == ERROR_SUCCESS &&
+                         wcscmp(value, exePath) == 0;
+        RegCloseKey(hKey);
+        return isEnabled;
+    }
+    return false;
 }

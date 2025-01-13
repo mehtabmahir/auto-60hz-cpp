@@ -5,7 +5,8 @@ To compile: g++ -static ui.cpp -o auto60hz-ui.exe -DUNICODE -D_UNICODE
 This application dynamically adjusts the screen's refresh rate based on whether a window is in fullscreen mode or not. The program monitors the active window and modifies the display refresh rate to either 60Hz or 120Hz to optimize performance and conserve battery life, especially on laptops or portable devices.
 
 ## Features
-- **Added User Interface**: Created a UI that handles custom refresh rate inputs and run on startup coming soon.
+- **Added User Interface**: Created a UI that handles custom refresh rate inputs and run on startup.
+- **Run on Startup**: Added toggle for run on startup.
 - **Fullscreen Detection**: Automatically detects when an application switches to fullscreen mode.
 - **Refresh Rate Control**: Switches the refresh rate between 60Hz and 120Hz depending on the window's state.
 - **System Process Filtering**: Ignores system applications such as `explorer.exe`, `widgets.exe`, and `snippingtool.exe` to focus only on user applications.
@@ -49,7 +50,7 @@ Alternatively, you can download the precompiled `.exe` file from the and run it 
 I am actively working on improving this tool and plan to introduce more features in upcoming updates, including:
 - Configurable refresh rates. ✓
 - User interface ✓
-- Run on startup (You can do it manually by putting it in the Startup folder)
+- Run on startup ✓
 - Run hidden on tray
 - Fix issue when PC goes to hibernate mode
 Stay tuned for new releases!
