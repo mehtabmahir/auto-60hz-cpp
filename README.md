@@ -1,5 +1,7 @@
 # Fullscreen Mode Refresh Rate Controller
 
+To compile: g++ -static ui.cpp -o auto60hz-ui.exe -DUNICODE -D_UNICODE
+
 This application dynamically adjusts the screen's refresh rate based on whether a window is in fullscreen mode or not. The program monitors the active window and modifies the display refresh rate to either 60Hz or 120Hz to optimize performance and conserve battery life, especially on laptops or portable devices.
 
 ## Features
@@ -29,6 +31,8 @@ The program is designed to run in the background with minimal CPU usage (<0.1%).
 
 ## Installation
 To run this program, you need a Windows environment with access to the `Windows API`. Simply compile and execute the program  with any C++ compiler.
+
+To compile: g++ -static ui.cpp -o auto60hz-ui.exe -DUNICODE -D_UNICODE
 
 Alternatively, you can download the precompiled `.exe` file from the and run it directly.
 
