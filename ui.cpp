@@ -4,13 +4,14 @@
 #include <iostream>
 #include <shlwapi.h>  // For registry functions
 #include <filesystem>
-#include "main.cpp"
+#include <thread>
+#include "main.cpp"  // Includes declaration for logicThread and shouldStop
 
-// Declare the global text box handles
+// Global variables and declarations (logicThread and shouldStop are in main.cpp)
 HWND hInputHigh, hInputLow, hStartupCheckbox;
-NOTIFYICONDATA nid = {};  // Tray icon data structure
+NOTIFYICONDATA nid = {};
 
-// Forward declarations of functions
+// Function declarations
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 void ProcessInputValues(HWND hWnd);
 void SaveValuesToFile(int high, int low);
@@ -20,6 +21,7 @@ void SetStartup(bool enable);
 bool IsStartupEnabled();
 void AddTrayIcon(HWND hWnd, NOTIFYICONDATA &nid);
 void RemoveTrayIcon(NOTIFYICONDATA &nid);
+void RestartApplication(HWND hWnd);
 
 // Entry point
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
@@ -36,7 +38,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
     // Create the window
     HWND hWnd = CreateWindowEx(0, CLASS_NAME, L"High and Low Input", WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, CW_USEDEFAULT, 300, 250, nullptr, nullptr, hInstance, nullptr);
+                               CW_USEDEFAULT, CW_USEDEFAULT, 300, 250, nullptr, nullptr, hInstance, nullptr);
 
     if (hWnd == nullptr) {
         return 0;
@@ -45,8 +47,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     // Add the tray icon
     AddTrayIcon(hWnd, nid);
 
-    // Show the window
-    ShowWindow(hWnd, nCmdShow);
+    // Check command-line for "-startup" flag
+    if (strstr(lpCmdLine, "-startup") != nullptr) {
+        ShowWindow(hWnd, SW_HIDE);  // Launch minimized if started on startup
+    } else {
+        ShowWindow(hWnd, nCmdShow);  // Normal behavior for manual launch
+    }
 
     // Main message loop
     MSG msg = {};
@@ -60,9 +66,8 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     return (int)msg.wParam;
 }
 
+// Window procedure
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
-    static NOTIFYICONDATA nid = {};
-    
     switch (uMsg) {
     case WM_CREATE:
         // Initialize tray icon
@@ -114,8 +119,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         }
         break;
 
+    case WM_POWERBROADCAST:
+        if (wParam == PBT_APMRESUMEAUTOMATIC) {
+            // Restart the application
+            RestartApplication(hWnd);
+        }
+        break;
+
     case WM_DESTROY:
         // Clean up tray icon and close application
+        shouldStop.store(true);  // Signal thread to stop
+        if (logicThread.joinable()) {
+            logicThread.join();  // Wait for the thread to finish
+        }
         RemoveTrayIcon(nid);
         PostQuitMessage(0); // Properly quit the application
         break;
@@ -126,6 +142,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     return 0;
 }
 
+// Function to restart the application
+void RestartApplication(HWND hWnd) {
+    Sleep(10000);
+    TCHAR szFileName[MAX_PATH];
+    GetModuleFileName(nullptr, szFileName, MAX_PATH);  // Get the current executable path
+
+    // Relaunch the application
+    ShellExecute(nullptr, L"open", szFileName, nullptr, nullptr, SW_HIDE);
+
+    // Close the current instance
+    SendMessage(hWnd, WM_CLOSE, 0, 0);
+}
 
 // Function to add the tray icon
 void AddTrayIcon(HWND hWnd, NOTIFYICONDATA &nid) {

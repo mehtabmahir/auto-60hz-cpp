@@ -48,17 +48,16 @@ Alternatively, you can download the precompiled `.exe` file from the and run it 
 
 ## Future Updates
 I am actively working on improving this tool and plan to introduce more features in upcoming updates, including:
-- Configurable refresh rates. ✓
-- User interface ✓
-- Run on startup ✓
-- Run hidden on tray ✓
-- Fix issue when PC goes to hibernate mode
+- Configurable refresh rates. ✓ Added
+- User interface ✓ Added
+- Run on startup ✓ Added
+- Run hidden on tray ✓ Fixed
+- Fix issue when PC goes to hibernate mode ✓ Fixed
 - UI Improvements
 Stay tuned for new releases!
 
 ## Limitations/Issues
 - This program only works on Windows operating systems.
-- Program stops working once PC goes into hibernate mode, sleep works fine.
 
 ## License
 This project is licensed under the MIT License. See the full license text below:
