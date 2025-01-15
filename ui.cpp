@@ -22,10 +22,12 @@ bool IsStartupEnabled();
 void AddTrayIcon(HWND hWnd, NOTIFYICONDATA &nid);
 void RemoveTrayIcon(NOTIFYICONDATA &nid);
 void RestartApplication(HWND hWnd);
+void endThread();
+void startThread();
 
 // Entry point
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
-    const wchar_t CLASS_NAME[] = L"Sample Window Class";
+    const wchar_t CLASS_NAME[] = L"Auto 60hz";
 
     // Register the window class
     WNDCLASS wc = {};
@@ -37,7 +39,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
     RegisterClass(&wc);
 
     // Create the window
-    HWND hWnd = CreateWindowEx(0, CLASS_NAME, L"High and Low Input", WS_OVERLAPPEDWINDOW,
+    HWND hWnd = CreateWindowEx(0, CLASS_NAME, L"Auto 60hz", WS_OVERLAPPEDWINDOW,
                                CW_USEDEFAULT, CW_USEDEFAULT, 300, 250, nullptr, nullptr, hInstance, nullptr);
 
     if (hWnd == nullptr) {
@@ -74,10 +76,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         AddTrayIcon(hWnd, nid);
 
         // Create input fields for high and low values
-        CreateWindow(L"STATIC", L"Enter High Value:", WS_VISIBLE | WS_CHILD, 10, 20, 150, 20, hWnd, nullptr, nullptr, nullptr);
+        CreateWindow(L"STATIC", L"High Refresh Rate:", WS_VISIBLE | WS_CHILD, 10, 20, 150, 20, hWnd, nullptr, nullptr, nullptr);
         hInputHigh = CreateWindow(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 160, 20, 100, 20, hWnd, nullptr, nullptr, nullptr);
 
-        CreateWindow(L"STATIC", L"Enter Low Value:", WS_VISIBLE | WS_CHILD, 10, 60, 150, 20, hWnd, nullptr, nullptr, nullptr);
+        CreateWindow(L"STATIC", L"Low Refresh Rate:", WS_VISIBLE | WS_CHILD, 10, 60, 150, 20, hWnd, nullptr, nullptr, nullptr);
         hInputLow = CreateWindow(L"EDIT", L"", WS_VISIBLE | WS_CHILD | WS_BORDER, 160, 60, 100, 20, hWnd, nullptr, nullptr, nullptr);
 
         // Add a button to process the input
@@ -120,18 +122,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         break;
 
     case WM_POWERBROADCAST:
-        if (wParam == PBT_APMRESUMEAUTOMATIC) {
+        if (wParam == PBT_APMRESUMEAUTOMATIC || wParam == PBT_APMRESUMESUSPEND) {
             // Restart the application
+            endThread();
             RestartApplication(hWnd);
         }
         break;
 
     case WM_DESTROY:
         // Clean up tray icon and close application
-        shouldStop.store(true);  // Signal thread to stop
-        if (logicThread.joinable()) {
-            logicThread.join();  // Wait for the thread to finish
-        }
+        endThread;
         RemoveTrayIcon(nid);
         PostQuitMessage(0); // Properly quit the application
         break;
@@ -140,6 +140,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
         return DefWindowProc(hWnd, uMsg, wParam, lParam);
     }
     return 0;
+}
+// Function to end the thread
+void endThread() {
+    shouldStop.store(true);  // Signal thread to stop
+    if (logicThread.joinable()) {
+        logicThread.join();  // Wait for the thread to finish
+    }
+}
+// fuction to start the thread
+void startThread() {
+    // Reset the stop flag to allow the new thread to run
+    shouldStop.store(false);  
+    // Start a new thread for mainScript
+    logicThread = std::thread(mainScript);  // Start the new thread
+    logicThread.detach();  // Detach it so it runs independently
 }
 
 // Function to restart the application
@@ -163,7 +178,7 @@ void AddTrayIcon(HWND hWnd, NOTIFYICONDATA &nid) {
     nid.uFlags = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     nid.uCallbackMessage = WM_USER + 1;  // Custom message for tray interactions
     nid.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(101));  // Icon resource ID
-    wcscpy_s(nid.szTip, L"My Application");
+    wcscpy_s(nid.szTip, L"Auto 60hz");
 
     Shell_NotifyIcon(NIM_ADD, &nid);
 }
@@ -196,20 +211,9 @@ void ProcessInputValues(HWND hWnd) {
     // Save the values to file for future use
     SaveValuesToFile(high, low);
 
-    // Signal the old thread to stop by setting the flag
-    shouldStop.store(true);  // Set the atomic flag to true
+    endThread();
 
-    // If the old thread is running, wait for it to finish
-    if (logicThread.joinable()) {
-        logicThread.join();  // Wait for the old thread to finish
-    }
-
-    // Reset the stop flag to allow the new thread to run
-    shouldStop.store(false);  
-
-    // Start a new thread for mainScript
-    logicThread = std::thread(mainScript);  // Start the new thread
-    logicThread.detach();  // Detach it so it runs independently
+    startThread();
 
     // Clean up
     delete[] highValue;
