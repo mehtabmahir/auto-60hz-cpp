@@ -160,14 +160,16 @@ void startThread() {
 // Function to restart the application
 void RestartApplication(HWND hWnd) {
     Sleep(10000);
+    endThread();
     TCHAR szFileName[MAX_PATH];
     GetModuleFileName(nullptr, szFileName, MAX_PATH);  // Get the current executable path
 
-    // Relaunch the application
-    ShellExecute(nullptr, L"open", szFileName, nullptr, nullptr, SW_HIDE);
 
     // Close the current instance
     SendMessage(hWnd, WM_CLOSE, 0, 0);
+    // Relaunch the application
+    ShellExecute(nullptr, L"open", szFileName, nullptr, nullptr, SW_HIDE);
+
 }
 
 // Function to add the tray icon

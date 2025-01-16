@@ -9,6 +9,7 @@
 
 std::atomic<bool> shouldStop(false);  // Atomic flag to control thread stop
 std::thread logicThread;  // Global thread object
+int currentRefreshRate, upperHz, lowerHz; 
 
 // Function to determine if a window is in fullscreen mode
 bool IsWindowFullscreen(HWND hwnd) {
@@ -58,7 +59,6 @@ bool CheckFullscreenState() {
     HWND hwnd = GetForegroundWindow();
     if (hwnd) {
         std::string appName = GetProcessName(hwnd);
-
         // Convert the process name to lowercase for comparison
         std::transform(appName.begin(), appName.end(), appName.begin(), ::tolower);
 
@@ -66,22 +66,17 @@ bool CheckFullscreenState() {
         if (std::find(systemProcesses.begin(), systemProcesses.end(), appName) == systemProcesses.end()) {
             if (IsWindowFullscreen(hwnd)) {
                 if (!isFullscreen) {
-                    std::cout << "The active window is in fullscreen mode: " << appName << std::endl;
                     trackedHwnd = hwnd;
                     isFullscreen = true;
                 }
             } else if (hwnd == trackedHwnd && !IsWindowFullscreen(hwnd)) {
-                std::cout << "The active window has exited fullscreen mode: " << appName << std::endl;
                 trackedHwnd = nullptr;
                 isFullscreen = false;
             }
-        } else {
-            std::cout << "Ignoring system process: " << appName << '\r';
-        }
-    } else {
+        } 
+    } 
+    else {
         if (trackedHwnd && !IsWindowFullscreen(trackedHwnd)) {
-            std::string appName = GetProcessName(trackedHwnd);
-            std::cout << "The tracked window has exited fullscreen mode: " << appName << std::endl;
             trackedHwnd = nullptr;
             isFullscreen = false;
         }
@@ -89,67 +84,42 @@ bool CheckFullscreenState() {
 
     return isFullscreen;
 }
-
-int upperHz, lowerHz;
-
+// function to set upper and lower values
 void SetHighLowValues(int high, int low) {
     upperHz = high;
     lowerHz = low;
+}
+// function to change refresh rate
+void changeRefreshRate(DEVMODE devMode, int target) {
+    devMode.dmDisplayFrequency = target;
+    if (currentRefreshRate != target) {
+        if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
+            currentRefreshRate = target;
+        }
+    }
 }
 
 int mainScript() {
     DEVMODE devMode;
     devMode.dmSize = sizeof(DEVMODE);
     devMode.dmDriverExtra = 0;
-    int currentRefreshRate;
+
+    // Get current settings
+    EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode);
+    // Get AC status
     SYSTEM_POWER_STATUS batteryStatus;
 
 
-    if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &devMode) == 0) {
-        std::cerr << "Error getting display settings." << std::endl;
-        return 1;
-    }
-
-
-    std::cout << "Checking fullscreen application state...\n";
     while (!shouldStop) {
-        GetSystemPowerStatus(&batteryStatus);
-        if (batteryStatus.ACLineStatus == 0) {
-            if (CheckFullscreenState()) {
-                devMode.dmDisplayFrequency = lowerHz;
-                if (currentRefreshRate != lowerHz){
-                    if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                        std::cout << "Refresh rate set to " << lowerHz << "hz" << std::endl;
-                        currentRefreshRate = lowerHz;
-                    }
-                    else
-                        std::cerr << "Error changing refresh rate." << std::endl;
-                }
-            }
-            else {
-                devMode.dmDisplayFrequency = upperHz;
-                if (currentRefreshRate != upperHz) {
-                    if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                        std::cout << "Refresh rate set to " << upperHz << "hz" << std::endl;
-                        currentRefreshRate = upperHz;
-                    }
-                    else
-                        std::cerr << "Error changing refresh rate." << std::endl;
-                }
-            }
+        GetSystemPowerStatus(&batteryStatus); // update battery status
+        if (batteryStatus.ACLineStatus == 0) { // check if device is not plugged in
+            if (CheckFullscreenState()) // lower refresh rate if fullscreen
+                changeRefreshRate(devMode, lowerHz);
+            else // increase refresh rate if not fullscreen
+                changeRefreshRate(devMode, upperHz);
         }
-        else if (currentRefreshRate == lowerHz) {
-            devMode.dmDisplayFrequency = upperHz;
-                if (ChangeDisplaySettings(&devMode, CDS_FULLSCREEN) == DISP_CHANGE_SUCCESSFUL) {
-                    std::cout << "Refresh rate set to " << upperHz << "hz" << std::endl;
-                    currentRefreshRate = upperHz;
-                }
-                else
-                    std::cerr << "Error changing refresh rate." << std::endl;
-                
-        }
-        else
-            std::cout << "Plugged in." << '\r';
+        else if (currentRefreshRate == lowerHz) // switches to upper refresh rate otherwise if needed
+            changeRefreshRate(devMode, upperHz); 
         Sleep(1000); // Check every second
     }
     return 0;
