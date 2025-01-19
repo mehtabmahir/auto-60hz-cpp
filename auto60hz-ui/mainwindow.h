@@ -19,7 +19,8 @@ public:
 
 private slots:
     void onApplyClicked();
-    //void SaveValuesToFile(int high, int low);
+    void saveSettings(int high, int low);
+    void loadSettings();
 
 private:
     Ui::MainWindow *ui;
