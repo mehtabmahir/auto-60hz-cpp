@@ -8,6 +8,10 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowTitle("Auto 60hz");
+
+    // Tray Icon Setup
+    setupTrayIcon();
+
     connect(ui->apply, &QPushButton::clicked, this, &MainWindow::onApplyClicked);
     connect(ui->startup, &QCheckBox::toggled, this, &MainWindow::startupCheckboxChanged);
     loadSettings();
@@ -84,6 +88,10 @@ void MainWindow::loadSettings()
     ui->low->setText(QString::number(low));
     SetHighLowValues(high, low);
     startThread();
+    // If the application was launched on startup, minimize it to the tray
+    if (startupChecked && QCoreApplication::arguments().contains("--startup")) {
+        showMinimized();  // Minimize the window
+    }
 }
 
 // Function to end the thread
@@ -124,7 +132,7 @@ void MainWindow::handleStartup(bool checked)
     appPath.replace("/", "\\");
 
     // Surround the path with quotes
-    QString quotedAppPath = QString("\"%1\"").arg(appPath);
+    QString quotedAppPath = QString("\"%1\" --startup").arg(appPath);
 
     // If the checkbox is checked, add the application to startup
     if (checked) {
@@ -133,4 +141,56 @@ void MainWindow::handleStartup(bool checked)
         // Otherwise, remove the application from startup
         bootUpSettings.remove("Auto 60hz");
     }
+}
+
+void MainWindow::setupTrayIcon()
+{
+    // Create the tray icon
+    trayIcon = new QSystemTrayIcon(this);
+    trayIcon->setIcon(QIcon(":/resources/icon.png")); // Set your desired icon
+    trayIcon->setToolTip("Auto 60hz");
+
+    // Create the tray menu
+    trayMenu = new QMenu(this);
+    QAction *restoreAction = trayMenu->addAction("Restore");
+    QAction *quitAction = trayMenu->addAction("Quit");
+
+    // Connect menu actions
+    connect(restoreAction, &QAction::triggered, this, [this]() {
+        this->showNormal();  // Restore the window
+        this->raise();       // Bring it to the front
+        this->activateWindow(); // Focus the window
+    });
+
+    connect(quitAction, &QAction::triggered, qApp, &QCoreApplication::quit);
+
+    trayIcon->setContextMenu(trayMenu);
+    trayIcon->show();
+
+    // Handle tray icon activation
+    connect(trayIcon, &QSystemTrayIcon::activated, this, [this](QSystemTrayIcon::ActivationReason reason) {
+        switch (reason) {
+        case QSystemTrayIcon::Trigger: // Single click
+        case QSystemTrayIcon::DoubleClick: // Double click
+            this->showNormal();  // Restore the window
+            this->raise();       // Bring it to the front
+            this->activateWindow(); // Focus the window
+            break;
+        case QSystemTrayIcon::MiddleClick: // Middle click, if supported
+            trayIcon->showMessage("Auto 60hz", "Application is running!", QSystemTrayIcon::Information, 3000);
+            break;
+        default:
+            break;
+        }
+    });
+}
+void MainWindow::changeEvent(QEvent *event)
+{
+    if (event->type() == QEvent::WindowStateChange) {
+        if (isMinimized()) {
+            hide();  // Hide the window when minimized
+            trayIcon->showMessage("Auto 60hz", "The application is minimized to the system tray.", QSystemTrayIcon::Information, 3000);
+        }
+    }
+    QMainWindow::changeEvent(event);  // Pass the event to the base class
 }

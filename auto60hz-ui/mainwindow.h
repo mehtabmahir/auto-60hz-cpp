@@ -5,6 +5,8 @@
 #include <QSettings>
 #include <QStandardPaths>
 #include <QFile>
+#include <QSystemTrayIcon>
+#include <QMenu>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -17,7 +19,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 private slots:
@@ -28,8 +30,12 @@ private slots:
     void startThread();
     void startupCheckboxChanged(bool checked);
     void handleStartup(bool checked);
+    void setupTrayIcon();
+    void changeEvent(QEvent *event);
 
 private:
     Ui::MainWindow *ui;
+    QSystemTrayIcon *trayIcon;
+    QMenu *trayMenu;
 };
 #endif // MAINWINDOW_H
