@@ -61,12 +61,23 @@ void MainWindow::saveSettings(int high, int low)
 
 void MainWindow::loadSettings()
 {
-    // Create a QSettings object to read the settings from the file
-    QSettings settings("settings.ini", QSettings::IniFormat);
+    // Get the directory where the executable is located
+    QString appDir = QCoreApplication::applicationDirPath();
+
+    // Construct the full path to settings.ini
+    QString settingsFilePath = QString("%1/settings.ini").arg(appDir);
+
+    // Load settings using the full path
+    QSettings settings(settingsFilePath, QSettings::IniFormat);
 
     // Read the saved values from the INI file
     int high = settings.value("High", 0).toInt();  // Default value 0 if not found
     int low = settings.value("Low", 0).toInt();    // Default value 0 if not found
+
+    // Load the startup checkbox state
+    bool startupChecked = settings.value("Startup", false).toBool();  // Default to false if not found
+    ui->startup->setChecked(startupChecked);  // Set the checkbox state
+    handleStartup(startupChecked);
 
     // Set the values in the input fields
     ui->high->setText(QString::number(high));
@@ -101,20 +112,25 @@ void MainWindow::startupCheckboxChanged(bool checked)
     QSettings settings("settings.ini", QSettings::IniFormat);
     settings.setValue("Startup", checked);
 }
-// function to handle startup
 void MainWindow::handleStartup(bool checked)
 {
-    // Get the path to the application executable
+    // Access the registry for startup applications
+    QSettings bootUpSettings("HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+
+    // Get the application's executable path
     QString appPath = QCoreApplication::applicationFilePath();
 
-    // Registry key to add/remove the application from startup
-    QSettings registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+    // Replace any forward slashes with backslashes
+    appPath.replace("/", "\\");
 
+    // Surround the path with quotes
+    QString quotedAppPath = QString("\"%1\"").arg(appPath);
+
+    // If the checkbox is checked, add the application to startup
     if (checked) {
-        // Add application to registry for startup
-        registry.setValue("Auto60hz", appPath);
+        bootUpSettings.setValue("Auto 60hz", quotedAppPath);
     } else {
-        // Remove application from registry
-        registry.remove("Auto60hz");
+        // Otherwise, remove the application from startup
+        bootUpSettings.remove("Auto 60hz");
     }
 }
