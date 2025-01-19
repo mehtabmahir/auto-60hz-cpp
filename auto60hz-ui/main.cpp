@@ -11,6 +11,13 @@ int main(int argc, char *argv[])
     QDir::setCurrent(appDir);
     a.setWindowIcon(QIcon(":/resources/icon.png"));
     MainWindow w;
-    w.show();
+    QStringList arguments = QCoreApplication::arguments();
+    // hide on startup
+    if (QCoreApplication::arguments().contains("--startup")) {
+        w.hide();
+        w.trayIcon->showMessage("Auto 60hz", "Started with Windows.");
+    }
+    else
+        w.show();
     return a.exec();
 }

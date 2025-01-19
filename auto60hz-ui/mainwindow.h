@@ -21,6 +21,9 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    void changeEvent(QEvent *event);
+    void setupTrayIcon();
+    QSystemTrayIcon *trayIcon;
 
 private slots:
     void onApplyClicked();
@@ -30,12 +33,8 @@ private slots:
     void startThread();
     void startupCheckboxChanged(bool checked);
     void handleStartup(bool checked);
-    void setupTrayIcon();
-    void changeEvent(QEvent *event);
-
 private:
     Ui::MainWindow *ui;
-    QSystemTrayIcon *trayIcon;
     QMenu *trayMenu;
 };
 #endif // MAINWINDOW_H

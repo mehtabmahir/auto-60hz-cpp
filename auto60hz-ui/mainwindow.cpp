@@ -15,6 +15,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->apply, &QPushButton::clicked, this, &MainWindow::onApplyClicked);
     connect(ui->startup, &QCheckBox::toggled, this, &MainWindow::startupCheckboxChanged);
     loadSettings();
+
 }
 
 MainWindow::~MainWindow()
@@ -88,10 +89,6 @@ void MainWindow::loadSettings()
     ui->low->setText(QString::number(low));
     SetHighLowValues(high, low);
     startThread();
-    // If the application was launched on startup, minimize it to the tray
-    if (startupChecked && QCoreApplication::arguments().contains("--startup")) {
-        showMinimized();  // Minimize the window
-    }
 }
 
 // Function to end the thread
@@ -189,7 +186,7 @@ void MainWindow::changeEvent(QEvent *event)
     if (event->type() == QEvent::WindowStateChange) {
         if (isMinimized()) {
             hide();  // Hide the window when minimized
-            trayIcon->showMessage("Auto 60hz", "The application is minimized to the system tray.", QSystemTrayIcon::Information, 3000);
+            trayIcon->showMessage("Auto 60hz", "The application is minimized to the system tray.");
         }
     }
     QMainWindow::changeEvent(event);  // Pass the event to the base class
