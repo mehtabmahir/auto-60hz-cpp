@@ -21,6 +21,8 @@ private slots:
     void onApplyClicked();
     void saveSettings(int high, int low);
     void loadSettings();
+    void endThread();
+    void startThread();
 
 private:
     Ui::MainWindow *ui;

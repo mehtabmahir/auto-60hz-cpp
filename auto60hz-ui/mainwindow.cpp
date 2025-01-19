@@ -21,6 +21,8 @@ MainWindow::~MainWindow()
 
 void MainWindow::onApplyClicked()
 {
+    // Disable the Apply button to prevent rapid clicking
+    ui->apply->setEnabled(false);
     // Retrieve values from input fields
     QString highText = ui->high->text();
     QString lowText = ui->low->text();
@@ -30,6 +32,7 @@ void MainWindow::onApplyClicked()
     int low = lowText.toInt();
 
     if (high < 1 || low <= 1) {
+        ui->apply->setEnabled(true);  // Re-enable the Apply button
         return; // invalid input
     }
 
@@ -38,6 +41,12 @@ void MainWindow::onApplyClicked()
 
     // Save the values to a file
     saveSettings(high, low);
+
+    endThread();
+    startThread();
+
+    // enable apply button
+    ui->apply->setEnabled(true);
 }
 
 
@@ -64,5 +73,22 @@ void MainWindow::loadSettings()
     ui->high->setText(QString::number(high));
     ui->low->setText(QString::number(low));
     SetHighLowValues(high, low);
+    startThread();
 }
 
+// Function to end the thread
+void MainWindow::endThread() {
+    shouldStop.store(true);  // Signal thread to stop
+    if (logicThread.joinable()) {
+        logicThread.join();  // Wait for the thread to finish
+    }
+}
+// fuction to start the thread
+void MainWindow::startThread()
+{
+    // Reset the stop flag to allow the new thread to run
+    shouldStop.store(false);
+    // Start a new thread for mainScript
+    logicThread = std::thread(mainScript);  // Start the new thread
+    logicThread.detach();  // Detach it so it runs independently
+}
