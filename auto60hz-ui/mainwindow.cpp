@@ -2,8 +2,6 @@
 #include "./ui_mainwindow.h"
 #include "../main.cpp"
 
-#include <QSettings>
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -11,6 +9,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle("Auto 60hz");
     connect(ui->apply, &QPushButton::clicked, this, &MainWindow::onApplyClicked);
+    connect(ui->startup, &QCheckBox::toggled, this, &MainWindow::startupCheckboxChanged);
     loadSettings();
 }
 
@@ -91,4 +90,31 @@ void MainWindow::startThread()
     // Start a new thread for mainScript
     logicThread = std::thread(mainScript);  // Start the new thread
     logicThread.detach();  // Detach it so it runs independently
+}
+
+void MainWindow::startupCheckboxChanged(bool checked)
+{
+    // Handle the checkbox state change immediately
+    handleStartup(checked);
+
+    // Save the checkbox state for future runs
+    QSettings settings("settings.ini", QSettings::IniFormat);
+    settings.setValue("Startup", checked);
+}
+// function to handle startup
+void MainWindow::handleStartup(bool checked)
+{
+    // Get the path to the application executable
+    QString appPath = QCoreApplication::applicationFilePath();
+
+    // Registry key to add/remove the application from startup
+    QSettings registry("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run", QSettings::NativeFormat);
+
+    if (checked) {
+        // Add application to registry for startup
+        registry.setValue("Auto60hz", appPath);
+    } else {
+        // Remove application from registry
+        registry.remove("Auto60hz");
+    }
 }

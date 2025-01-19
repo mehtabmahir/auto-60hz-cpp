@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSettings>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -23,6 +25,8 @@ private slots:
     void loadSettings();
     void endThread();
     void startThread();
+    void startupCheckboxChanged(bool checked);
+    void handleStartup(bool checked);
 
 private:
     Ui::MainWindow *ui;
