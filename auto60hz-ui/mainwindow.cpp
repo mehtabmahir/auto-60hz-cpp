@@ -28,7 +28,7 @@ bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr
     if (msg->message == WM_POWERBROADCAST) {
         if (msg->wParam == PBT_APMRESUMESUSPEND) {
             // The device has resumed from hibernation
-            Sleep(5000);
+            Sleep(10000);
             trayIcon->showMessage("Auto 60hz", "The laptop has woken up from hibernation. Restarting.");
             endThread();
             restartApplication();
