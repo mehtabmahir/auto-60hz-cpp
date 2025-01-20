@@ -23,6 +23,30 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
+    MSG *msg = static_cast<MSG *>(message);
+    if (msg->message == WM_POWERBROADCAST) {
+        if (msg->wParam == PBT_APMRESUMESUSPEND) {
+            // The device has resumed from hibernation
+            Sleep(5000);
+            trayIcon->showMessage("Auto 60hz", "The laptop has woken up from hibernation. Restarting.");
+            endThread();
+            restartApplication();
+        }
+    }
+    return QMainWindow::nativeEvent(eventType, message, result); // Call base class
+}
+
+void MainWindow::restartApplication() {
+    // Get the current application path
+    QString program = QCoreApplication::applicationFilePath(); // Path of the current executable
+    QStringList arguments;
+    arguments << "--startup";
+    // Start the application again
+    QProcess::startDetached(program, arguments);
+    QApplication::quit(); // Exit the current application
+}
+
 void MainWindow::onApplyClicked()
 {
     // Disable the Apply button to prevent rapid clicking
