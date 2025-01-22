@@ -8,6 +8,8 @@
 #include <QSystemTrayIcon>
 #include <QMenu>
 #include <QProcess>
+#include <QDesktopServices>
+#include <QUrl>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -31,6 +33,8 @@ protected:
 
 private slots:
     void onApplyClicked();
+    void onDonateClicked();
+    void onGithubClicked();
     void saveSettings(int high, int low);
     void loadSettings();
     void endThread();

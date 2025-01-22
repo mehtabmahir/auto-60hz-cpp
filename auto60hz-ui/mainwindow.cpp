@@ -8,14 +8,16 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);
     setWindowTitle("Auto 60hz");
-
+    setFixedSize(240, 140);
     // Tray Icon Setup
     setupTrayIcon();
 
     connect(ui->apply, &QPushButton::clicked, this, &MainWindow::onApplyClicked);
     connect(ui->startup, &QCheckBox::toggled, this, &MainWindow::startupCheckboxChanged);
-    loadSettings();
+    connect(ui->donate, &QPushButton::clicked, this, &MainWindow::onDonateClicked);
+    connect(ui->github, &QPushButton::clicked, this, &MainWindow::onGithubClicked);
 
+    loadSettings();
 }
 
 MainWindow::~MainWindow()
@@ -77,6 +79,15 @@ void MainWindow::onApplyClicked()
     ui->apply->setEnabled(true);
 }
 
+void MainWindow::onDonateClicked()
+{
+    QDesktopServices::openUrl(QUrl("https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD"));
+}
+
+void MainWindow::onGithubClicked()
+{
+    QDesktopServices::openUrl(QUrl("https://www.github.com/mehtabmahir"));
+}
 
 void MainWindow::saveSettings(int high, int low)
 {
