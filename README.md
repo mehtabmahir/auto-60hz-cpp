@@ -2,7 +2,7 @@
 
 ![alt text](https://github.com/mehtabmahir/auto-60hz-cpp/blob/main/preview.png "Preview")
 
-To compile: `g++ -static ui.cpp -o "bin\auto60hz-ui.exe" -DUNICODE -D_UNICODE -lshlwapi resources.o`
+To compile: Clone and then use Qt Creator, open the CMakeLists.txt and run the build (Ctrl+B).
 
 This application dynamically adjusts the screen's refresh rate based on whether a window is in fullscreen mode or not. The program monitors the active window and modifies the display refresh rate to either 60Hz or 120Hz to optimize performance and conserve battery life, especially on laptops or portable devices.
 
@@ -43,10 +43,7 @@ To run this program, you need a Windows environment with access to the `Windows 
 - Any C++ compiler supporting Windows API and Qt.
 
 ### Compilation
-To compile:
-```sh
-g++ -static ui.cpp -o "bin\auto60hz-ui.exe" -DUNICODE -D_UNICODE -lshlwapi resources.o
-```
+Clone and then use Qt Creator, open the CMakeLists.txt and run the build (Ctrl+B).
 Alternatively, you can download the precompiled `.exe` file from the release page and run it directly.
 
 ## How to Use
