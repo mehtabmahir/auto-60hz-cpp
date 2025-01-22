@@ -1,6 +1,6 @@
 # Fullscreen Mode Refresh Rate Controller
 
-![alt text](https://github.com/mehtabmahir/auto-60hz-cpp/blob/main/preview.png "Preview")
+<img src="https://github.com/mehtabmahir/auto-60hz-cpp/blob/main/preview.png" width="300" height="215" />
 
 To compile: Clone and then use Qt Creator, open the CMakeLists.txt and run the build (Ctrl+B).
 
@@ -62,16 +62,19 @@ I am actively working on improving this tool and plan to introduce more features
 - **Run on startup**: ✓ Implemented
 - **Run hidden in tray**: ✓ Fixed
 - **Hibernate mode issue**: ✓ Fixed
+- Allow the user to add more exclusions in the UI.
 
 Stay tuned for new releases!
 
 ## Limitations/Issues
 - This program only works on Windows operating systems.
-- Requires the Qt runtime environment for proper execution.
+- Requires the Qt runtime environment for easy compilation.
+  
+## Donate
+If you would like to support this project, feel free to [donate](https://www.paypal.com/donate/?business=5FM6Y27A3CK58&no_recurring=0&currency_code=USD). Thank you so much!
 
 ## License
 This project is licensed under the MIT License. See the full license text below:
-
 ```
 MIT License
 
