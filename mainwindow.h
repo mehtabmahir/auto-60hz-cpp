@@ -10,6 +10,8 @@
 #include <QProcess>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QThread>
+#include <QTimer>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -28,9 +30,6 @@ public:
     void setupTrayIcon();
     QSystemTrayIcon *trayIcon;
 
-protected:
-    bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result);
-
 private slots:
     void onApplyClicked();
     void onDonateClicked();
@@ -41,10 +40,12 @@ private slots:
     void startThread();
     void startupCheckboxChanged(bool checked);
     void handleStartup(bool checked);
-    void restartApplication();
 
 private:
     Ui::MainWindow *ui;
     QMenu *trayMenu;
+    QThread *logicThread = nullptr;
+    int high, low;
+    QTimer *refreshPollTimer = nullptr;
 };
 #endif // MAINWINDOW_H

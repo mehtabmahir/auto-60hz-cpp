@@ -17,7 +17,6 @@ set(PROJECT_SOURCES
         mainwindow.cpp
         mainwindow.h
         mainwindow.ui
-        resources.rc
 )
 
 if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -25,6 +24,7 @@ if(${QT_VERSION_MAJOR} GREATER_EQUAL 6)
         MANUAL_FINALIZATION
         ${PROJECT_SOURCES}
         resources.qrc
+
     )
 # Define target properties for Android with Qt 6 as:
 #    set_property(TARGET auto60hz-ui APPEND PROPERTY QT_ANDROID_PACKAGE_SOURCE_DIR

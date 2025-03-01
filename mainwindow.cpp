@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 #include "./ui_mainwindow.h"
-#include "../main.cpp"
+#include "./auto60hz.cpp"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -25,30 +25,6 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
-bool MainWindow::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
-    MSG *msg = static_cast<MSG *>(message);
-    if (msg->message == WM_POWERBROADCAST) {
-        if (msg->wParam == PBT_APMRESUMESUSPEND) {
-            // The device has resumed from hibernation
-            Sleep(10000);
-            trayIcon->showMessage("Auto 60hz", "The laptop has woken up from hibernation. Restarting.");
-            endThread();
-            restartApplication();
-        }
-    }
-    return QMainWindow::nativeEvent(eventType, message, result); // Call base class
-}
-
-void MainWindow::restartApplication() {
-    // Get the current application path
-    QString program = QCoreApplication::applicationFilePath(); // Path of the current executable
-    QStringList arguments;
-    arguments << "--startup";
-    // Start the application again
-    QProcess::startDetached(program, arguments);
-    QApplication::quit(); // Exit the current application
-}
-
 void MainWindow::onApplyClicked()
 {
     // Disable the Apply button to prevent rapid clicking
@@ -58,8 +34,8 @@ void MainWindow::onApplyClicked()
     QString lowText = ui->low->text();
 
     // Convert to integer values
-    int high = highText.toInt();
-    int low = lowText.toInt();
+    high = highText.toInt();
+    low = lowText.toInt();
 
     if (high < 1 || low <= 1) {
         ui->apply->setEnabled(true);  // Re-enable the Apply button
@@ -127,21 +103,39 @@ void MainWindow::loadSettings()
 }
 
 // Function to end the thread
-void MainWindow::endThread() {
-    shouldStop.store(true);  // Signal thread to stop
-    if (logicThread.joinable()) {
-        logicThread.join();  // Wait for the thread to finish
+void MainWindow::endThread()
+{
+    // Signal mainScript() loop to exit
+    shouldStop.store(true);
+
+    // If there's an active QThread, wait for it to finish
+    if (logicThread) {
+        logicThread->quit();   // Ask the thread's event loop to quit
+        logicThread->wait();   // Wait until mainScript() returns
+        delete logicThread;    // Clean up
+        logicThread = nullptr;
     }
 }
+
+
 // fuction to start the thread
 void MainWindow::startThread()
 {
-    // Reset the stop flag to allow the new thread to run
+    // First, end any existing thread so we don't spawn duplicates
+    endThread();
+
+    // Reset stop flag so mainScript() won't exit immediately
     shouldStop.store(false);
-    // Start a new thread for mainScript
-    logicThread = std::thread(mainScript);  // Start the new thread
-    logicThread.detach();  // Detach it so it runs independently
+
+    // Create a new QThread that runs mainScript in its own function
+    logicThread = QThread::create([]() {
+        mainScript(); // your existing function from main.cpp
+    });
+
+    // Start the QThread
+    logicThread->start();
 }
+
 
 void MainWindow::startupCheckboxChanged(bool checked)
 {
