@@ -28,10 +28,12 @@ MainWindow::~MainWindow()
 void MainWindow::onPauseClicked()
 {
     if (ui->pause->text() == "Pause") {
-        ui->pause->setText("Unpause");
+        trayIcon->showMessage("Auto 60hz", "Pausing applicating.");
+        ui->pause->setText("Resume");
         endThread();
     }
     else {
+        trayIcon->showMessage("Auto 60hz", "Resuming application.");
         ui->pause->setText("Pause");
         startThread();
     }
@@ -190,10 +192,19 @@ void MainWindow::setupTrayIcon()
 
     // Create the tray menu
     trayMenu = new QMenu(this);
+    QAction *pauseAction = trayMenu->addAction("Pause");
     QAction *restoreAction = trayMenu->addAction("Restore");
     QAction *quitAction = trayMenu->addAction("Quit");
 
     // Connect menu actions
+    connect(pauseAction, &QAction::triggered, this, [pauseAction, this]() {
+        if (pauseAction->text() == "Pause")
+            pauseAction->setText("Resume");
+        else
+            pauseAction->setText("Pause");
+        onPauseClicked();
+    });
+
     connect(restoreAction, &QAction::triggered, this, [this]() {
         this->showNormal();  // Restore the window
         this->raise();       // Bring it to the front
