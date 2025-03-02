@@ -28,7 +28,7 @@ MainWindow::~MainWindow()
 void MainWindow::onPauseClicked()
 {
     if (ui->pause->text() == "Pause") {
-        trayIcon->showMessage("Auto 60hz", "Pausing applicating.");
+        trayIcon->showMessage("Auto 60hz", "Pausing application.");
         ui->pause->setText("Resume");
         endThread();
     }
@@ -113,6 +113,8 @@ void MainWindow::loadSettings()
     ui->high->setText(QString::number(high));
     ui->low->setText(QString::number(low));
     SetHighLowValues(high, low);
+
+    trayIcon->showMessage("Auto 60hz", "Set high to: " + QString::number(high) + "\nSet low to: " + QString::number(low));
     startThread();
 }
 

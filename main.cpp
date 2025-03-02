@@ -12,6 +12,7 @@ int main(int argc, char *argv[])
     a.setWindowIcon(QIcon(":/resources/icon.png"));
     MainWindow w;
     QStringList arguments = QCoreApplication::arguments();
+
     // hide on startup
     if (QCoreApplication::arguments().contains("--startup")) {
         w.hide();
