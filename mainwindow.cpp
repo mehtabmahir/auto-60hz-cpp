@@ -16,13 +16,25 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->startup, &QCheckBox::toggled, this, &MainWindow::startupCheckboxChanged);
     connect(ui->donate, &QPushButton::clicked, this, &MainWindow::onDonateClicked);
     connect(ui->github, &QPushButton::clicked, this, &MainWindow::onGithubClicked);
-
+    connect(ui->pause, &QPushButton::clicked, this, &MainWindow::onPauseClicked);
     loadSettings();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::onPauseClicked()
+{
+    if (ui->pause->text() == "Pause") {
+        ui->pause->setText("Unpause");
+        endThread();
+    }
+    else {
+        ui->pause->setText("Pause");
+        startThread();
+    }
 }
 
 void MainWindow::onApplyClicked()

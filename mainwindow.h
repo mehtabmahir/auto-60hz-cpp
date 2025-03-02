@@ -31,6 +31,7 @@ public:
     QSystemTrayIcon *trayIcon;
 
 private slots:
+    void onPauseClicked();
     void onApplyClicked();
     void onDonateClicked();
     void onGithubClicked();
